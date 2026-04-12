@@ -59,7 +59,7 @@ export default function Footer() {
       </div>
       
       <div className="text-center text-gray-600 font-medium text-[11px] md:text-sm pt-4">
-        &copy; {new Date().getFullYear()} Pitchico Store. All rights reserved. Elevating the standard of living.
+        &copy; {new Date().getFullYear()} Pitchicoo Store. All rights reserved. Elevating the standard of living.
       </div>
     </footer>
   );
