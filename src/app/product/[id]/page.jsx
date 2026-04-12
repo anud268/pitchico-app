@@ -24,6 +24,8 @@ export default function ProductPage() {
   };
 
   useEffect(() => {
+    if (!id) return;
+    
     window.scrollTo(0, 0);
     const fetchProductData = async () => {
       try {

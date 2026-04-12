@@ -5,7 +5,7 @@ import Product from '@/models/Product';
 export async function GET(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     let product = null;
     // Try to find by _id if it's a valid ObjectId OR by a string id if it's custom.

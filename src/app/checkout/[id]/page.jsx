@@ -24,6 +24,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(!isCartCheckout);
 
   useEffect(() => {
+    if (!id) return;
+    
     if (!isCartCheckout) {
       const fetchProduct = async () => {
         try {
