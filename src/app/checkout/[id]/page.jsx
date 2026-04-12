@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { products } from '@/data/products';
 import { formatCurrency } from '@/utils/formatters';
 import Toast from '@/components/ui/Toast';
 import { useCart } from '@/context/CartContext';
@@ -16,12 +15,32 @@ export default function CheckoutPage() {
   const { cart, getCartTotal, clearCart } = useCart();
 
   const isCartCheckout = id === 'cart';
-  const product = products.find(p => p.id === id);
 
   const [checkoutStep, setCheckoutStep] = useState('form');
   const [toast, setToast] = useState({ show: false, message: "" });
   const [paymentMode, setPaymentMode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(!isCartCheckout);
+
+  useEffect(() => {
+    if (!isCartCheckout) {
+      const fetchProduct = async () => {
+        try {
+          const res = await fetch(`/api/products/${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setProduct(data);
+          }
+        } catch (error) {
+          console.error("Error fetching product for checkout:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProduct();
+    }
+  }, [id, isCartCheckout]);
 
   const checkoutItems = isCartCheckout ? cart : product ? [{ product, quantity: 1 }] : [];
 
@@ -45,6 +64,14 @@ export default function CheckoutPage() {
     setToast({ show: true, message });
     setTimeout(() => setToast({ show: false, message: "" }), 4000);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-ivory text-dark pt-32 pb-24 px-6">
+        <h2 className="text-xl font-display font-bold">Loading Checkout...</h2>
+      </div>
+    );
+  }
 
   // if (checkoutItems.length === 0) {
   //   return (

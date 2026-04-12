@@ -3,13 +3,30 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/utils/formatters';
-import { products } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 
 export default function AllProductsPage() {
   const router = useRouter();
   const { addToCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const categories = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
 
@@ -17,9 +34,9 @@ export default function AllProductsPage() {
     ? products 
     : products.filter(p => p.category === selectedCategory);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  if (loading) {
+    return <div className="pt-25 pb-24 px-6 max-w-7xl mx-auto min-h-screen flex items-center justify-center">Loading products...</div>;
+  }
 
   return (
     <div className="pt-25 pb-24 px-6 max-w-7xl mx-auto min-h-screen">

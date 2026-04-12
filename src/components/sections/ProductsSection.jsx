@@ -3,7 +3,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/utils/formatters';
-import { products } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 
 export default function ProductsSection() {
@@ -11,6 +10,7 @@ export default function ProductsSection() {
   const { addToCart } = useCart();
   const scrollRef = useRef(null);
 
+  const [products, setProducts] = useState([]);
   const [isDown, setIsDown] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeftState, setScrollLeftState] = useState(0);
@@ -18,6 +18,19 @@ export default function ProductsSection() {
   const [userInteracted, setUserInteracted] = useState(false);
 
   const reqRef = useRef(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const baseProducts = products.filter(product => product.showOnFrontPage);
   // Duplicate array 3 times for a seamless infinite scroll loop

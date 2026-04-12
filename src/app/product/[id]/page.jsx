@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { products } from '@/data/products';
 import { formatCurrency } from '@/utils/formatters';
 import { useCart } from '@/context/CartContext';
 
@@ -12,9 +11,10 @@ export default function ProductPage() {
   const { addToCart } = useCart();
   const [mainImage, setMainImage] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const product = products.find(p => p.id === id);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
-  const relatedProducts = products.filter(p => p.showOnFrontPage && p.id !== product?.id);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -25,11 +25,35 @@ export default function ProductPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (product) {
-      setMainImage(product.images[0]);
-      setQuantity(1);
-    }
-  }, [product, id]);
+    const fetchProductData = async () => {
+      try {
+        const [productRes, allRes] = await Promise.all([
+          fetch(`/api/products/${id}`),
+          fetch(`/api/products`)
+        ]);
+
+        if (productRes.ok) {
+          const productData = await productRes.json();
+          setProduct(productData);
+          setMainImage(productData.images?.[0] || "");
+        } else {
+          setProduct(null);
+        }
+
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          setRelatedProducts(allData.filter(p => p.showOnFrontPage && p.id !== id));
+        }
+      } catch (error) {
+        console.error("Error fetching product data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProductData();
+    setQuantity(1);
+  }, [id]);
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -39,6 +63,14 @@ export default function ProductPage() {
     addToCart(product, quantity);
     router.push(`/checkout/cart`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-ivory text-dark pt-32 pb-24 px-6">
+        <h2 className="text-xl font-display font-bold">Loading Product...</h2>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
