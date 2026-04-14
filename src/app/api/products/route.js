@@ -38,6 +38,8 @@ export async function POST(request) {
       category: formData.get('category'),
       longDescription: formData.get('longDescription'),
       showOnFrontPage: formData.get('showOnFrontPage') === 'true',
+      rating: Number(formData.get('rating')) || 0,
+      ratingCount: Number(formData.get('ratingCount')) || 0,
     };
 
     // Features and advantages sent as JSON array strings

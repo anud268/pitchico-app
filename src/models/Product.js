@@ -12,6 +12,8 @@ const productSchema = new mongoose.Schema(
     features: [{ type: String }],
     advantages: [{ type: String }],
     showOnFrontPage: { type: Boolean, default: false },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    ratingCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

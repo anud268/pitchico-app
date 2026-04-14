@@ -17,10 +17,14 @@ export default function AddProductPage() {
     features: '',
     advantages: '',
     showOnFrontPage: true,
+    rating: '4.5',
+    ratingCount: '100',
   });
 
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
+  const [primaryIndex, setPrimaryIndex] = useState(0);
+  const [dragIndex, setDragIndex] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,11 +37,11 @@ export default function AddProductPage() {
   const handleFileChange = (e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      setSelectedFiles(filesArray);
-
-      // Create preview URLs
-      const newPreviewUrls = filesArray.map(file => URL.createObjectURL(file));
-      setPreviewUrls(newPreviewUrls);
+      // Append to existing files instead of replacing
+      const combined = [...selectedFiles, ...filesArray];
+      setSelectedFiles(combined);
+      const newPreviews = filesArray.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newPreviews]);
     }
   };
 
@@ -47,11 +51,43 @@ export default function AddProductPage() {
     setSelectedFiles(updatedFiles);
 
     const updatedPreviews = [...previewUrls];
-    // Attempt to free memory
     URL.revokeObjectURL(updatedPreviews[index]);
     updatedPreviews.splice(index, 1);
     setPreviewUrls(updatedPreviews);
+
+    // Adjust primaryIndex
+    if (primaryIndex === index) setPrimaryIndex(0);
+    else if (primaryIndex > index) setPrimaryIndex(prev => prev - 1);
   };
+
+  // Drag handlers for reordering
+  const handleDragStart = (index) => setDragIndex(index);
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+
+    const newFiles = [...selectedFiles];
+    const newPreviews = [...previewUrls];
+
+    const [movedFile] = newFiles.splice(dragIndex, 1);
+    const [movedPreview] = newPreviews.splice(dragIndex, 1);
+    newFiles.splice(index, 0, movedFile);
+    newPreviews.splice(index, 0, movedPreview);
+
+    // Adjust primaryIndex during drag
+    let newPrimary = primaryIndex;
+    if (primaryIndex === dragIndex) newPrimary = index;
+    else if (dragIndex < primaryIndex && index >= primaryIndex) newPrimary = primaryIndex - 1;
+    else if (dragIndex > primaryIndex && index <= primaryIndex) newPrimary = primaryIndex + 1;
+
+    setPrimaryIndex(newPrimary);
+    setDragIndex(index);
+    setSelectedFiles(newFiles);
+    setPreviewUrls(newPreviews);
+  };
+
+  const handleDragEnd = () => setDragIndex(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,6 +108,8 @@ export default function AddProductPage() {
       submitData.append('category', formData.category);
       submitData.append('longDescription', formData.longDescription);
       submitData.append('showOnFrontPage', formData.showOnFrontPage);
+      submitData.append('rating', formData.rating);
+      submitData.append('ratingCount', formData.ratingCount);
       
       const features = formData.features.split('\n').map(s => s.trim()).filter(Boolean);
       submitData.append('features', JSON.stringify(features));
@@ -79,7 +117,12 @@ export default function AddProductPage() {
       const advantages = formData.advantages.split('\n').map(s => s.trim()).filter(Boolean);
       submitData.append('advantages', JSON.stringify(advantages));
 
-      selectedFiles.forEach((file) => {
+      // Reorder so primary image is always first
+      const orderedFiles = [
+        selectedFiles[primaryIndex],
+        ...selectedFiles.filter((_, i) => i !== primaryIndex),
+      ];
+      orderedFiles.forEach((file) => {
         submitData.append('images', file);
       });
 
@@ -103,9 +146,12 @@ export default function AddProductPage() {
           features: '',
           advantages: '',
           showOnFrontPage: true,
+          rating: '4.5',
+          ratingCount: '100',
         });
         setSelectedFiles([]);
         setPreviewUrls([]);
+        setPrimaryIndex(0);
         window.scrollTo(0, 0);
       } else {
         setErrorMsg(data.error || "Failed to add product");
@@ -137,9 +183,9 @@ export default function AddProductPage() {
 
         {/* Warning if Private Key is missing, normally one wouldn't show this entirely in production without check 
             but since you are working on it, it's good to keep in mind */}
-        <div className="bg-amber-50 text-amber-800 p-4 rounded-xl mb-6 font-medium text-sm border border-amber-200">
+        {/* <div className="bg-amber-50 text-amber-800 p-4 rounded-xl mb-6 font-medium text-sm border border-amber-200">
           ⚠️ Make sure your <strong>IMAGEKIT_PRIVATE_KEY</strong> is set in your <code>.env.local</code> before uploading.
-        </div>
+        </div> */}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,6 +222,57 @@ export default function AddProductPage() {
             </label>
           </div>
 
+          {/* Rating Section */}
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Product Rating
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Rating Score (0 – 5)</label>
+                <input
+                  type="number"
+                  name="rating"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  value={formData.rating}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all font-bold text-dark"
+                  placeholder="e.g. 4.5"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">No. of Ratings</label>
+                <input
+                  type="number"
+                  name="ratingCount"
+                  min="0"
+                  value={formData.ratingCount}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-300 focus:border-yellow-400 transition-all font-bold text-dark"
+                  placeholder="e.g. 1250"
+                />
+              </div>
+            </div>
+            {/* Star Preview */}
+            <div className="flex items-center gap-1.5 mt-3">
+              {[1, 2, 3, 4, 5].map(star => {
+                const val = parseFloat(formData.rating) || 0;
+                const filled = star <= Math.floor(val);
+                const half = !filled && star === Math.ceil(val) && val % 1 >= 0.5;
+                return (
+                  <svg key={star} className={`w-5 h-5 ${filled ? 'text-yellow-400' : half ? 'text-yellow-300' : 'text-gray-300'} fill-current`} viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                );
+              })}
+              <span className="text-sm font-bold text-gray-700 ml-1">{formData.rating}</span>
+              <span className="text-xs text-gray-400">({Number(formData.ratingCount).toLocaleString()} ratings)</span>
+            </div>
+          </div>
+
           <hr className="border-gray-100" />
 
           <div>
@@ -195,44 +292,88 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          {/* Elegant File Upload UI */}
+          {/* Image Upload Section */}
           <div className="mt-8">
-            <label className="block text-sm font-bold text-gray-700 mb-3">Upload Product Images *</label>
-            
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-bold text-gray-700">Upload Product Images *</label>
+              {previewUrls.length > 0 && (
+                <span className="text-xs text-gray-400 font-medium">{previewUrls.length} image{previewUrls.length > 1 ? 's' : ''} selected</span>
+              )}
+            </div>
+
+            {/* Drop Zone */}
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-gold transition-colors bg-gray-50 cursor-pointer relative">
-              <input 
-                type="file" 
-                multiple 
-                accept="image/*" 
+              <input
+                type="file"
+                multiple
+                accept="image/*"
                 onChange={handleFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
               <div className="flex flex-col items-center justify-center space-y-2 pointer-events-none">
                 <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                 <div className="text-gray-600 font-medium tracking-wide">
-                  Drag and drop your images here or <span className="text-gold font-bold">Browse</span>
+                  {previewUrls.length > 0 ? 'Add more images or' : 'Drag and drop images here or'} <span className="text-gold font-bold">Browse</span>
                 </div>
-                <div className="text-xs text-gray-400">High quality PNG, JPG (Max 5MB per image)</div>
+                <div className="text-xs text-gray-400">PNG, JPG up to 5MB each • Click an image to set as primary</div>
               </div>
             </div>
 
-            {/* Image Preview Grid */}
+            {/* Instruction badge */}
+            {previewUrls.length > 1 && (
+              <div className="flex items-center gap-2 mt-3 text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                <svg className="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span><strong>Drag</strong> to reorder · <strong>Click</strong> an image to set it as the primary cover</span>
+              </div>
+            )}
+
+            {/* Image Preview Grid with Drag & Primary Select */}
             {previewUrls.length > 0 && (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
                 {previewUrls.map((url, idx) => (
-                  <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 aspect-square">
-                    <img src={url} alt={`preview ${idx}`} className="w-full h-full object-cover" />
-                    <button 
-                      type="button"
-                      onClick={() => removeFile(idx)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity transform hover:scale-110 shadow-md"
-                      title="Remove Image"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                    {idx === 0 && (
-                      <span className="absolute bottom-1 left-1 bg-dark/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase">Primary Cover</span>
+                  <div
+                    key={url}
+                    draggable
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => setPrimaryIndex(idx)}
+                    className={`relative group rounded-xl overflow-hidden aspect-square cursor-grab active:cursor-grabbing transition-all duration-200 select-none
+                      ${
+                        idx === primaryIndex
+                          ? 'ring-2 ring-gold ring-offset-2 shadow-lg scale-105'
+                          : 'border border-gray-200 hover:border-gold/50 hover:shadow-md'
+                      }
+                      ${dragIndex === idx ? 'opacity-50 scale-95' : ''}
+                    `}
+                  >
+                    <img src={url} alt={`preview ${idx}`} className="w-full h-full object-cover pointer-events-none" draggable="false" />
+
+                    {/* Primary Badge */}
+                    {idx === primaryIndex ? (
+                      <span className="absolute bottom-0 left-0 right-0 bg-gold/90 text-white text-[9px] font-black px-1.5 py-1 uppercase tracking-widest text-center">
+                        ★ Primary Cover
+                      </span>
+                    ) : (
+                      <span className="absolute bottom-0 left-0 right-0 bg-dark/60 text-white/80 text-[9px] font-medium px-1.5 py-1 uppercase tracking-widest text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        Click to set primary
+                      </span>
                     )}
+
+                    {/* Remove Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeFile(idx); }}
+                      className="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 shadow-md z-10"
+                      title="Remove"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+
+                    {/* Order Number Badge */}
+                    <span className="absolute top-1.5 left-1.5 bg-dark/70 text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                      {idx + 1}
+                    </span>
                   </div>
                 ))}
               </div>
