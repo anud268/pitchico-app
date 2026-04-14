@@ -12,10 +12,27 @@ const productSchema = new mongoose.Schema(
     features: [{ type: String }],
     advantages: [{ type: String }],
     showOnFrontPage: { type: Boolean, default: false },
-    rating: { type: Number, default: 0, min: 0, max: 5 },
-    ratingCount: { type: Number, default: 0 },
+    rating: { 
+      type: Number, 
+      default: 0,
+      min: 0,
+      max: 5,
+      required: false
+    },
+    ratingCount: { 
+      type: Number, 
+      default: 0,
+      required: false
+    },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Product || mongoose.model('Product', productSchema);
+// In development, the model might be cached with an old schema.
+// We delete it so it can be redefined with the new rating fields.
+if (mongoose.models.Product) {
+  delete mongoose.models.Product;
+}
+
+const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
+export default Product;

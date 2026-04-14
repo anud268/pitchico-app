@@ -87,25 +87,26 @@ export default function AllProductsPage() {
                 <span>{formatCurrency(product.price)}</span>
               </div>
               {/* Star Rating */}
-              {product.rating > 0 && (
-                <div className="flex items-center gap-1 mb-3 md:mb-5">
-                  <div className="flex items-center gap-0.5">
-                    {[1,2,3,4,5].map(star => {
-                      const filled = star <= Math.floor(product.rating);
-                      const half = !filled && star === Math.ceil(product.rating) && product.rating % 1 >= 0.5;
-                      return (
-                        <svg key={star} className={`w-3 h-3 md:w-3.5 md:h-3.5 fill-current ${filled ? 'text-yellow-400' : half ? 'text-yellow-300' : 'text-gray-200'}`} viewBox="0 0 24 24">
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
-                      );
-                    })}
-                  </div>
-                  <span className="text-[10px] md:text-xs font-bold text-gray-700">{product.rating.toFixed(1)}</span>
-                  {product.ratingCount > 0 && (
-                    <span className="text-[9px] md:text-[10px] text-gray-400">({product.ratingCount.toLocaleString()})</span>
-                  )}
+              <div className="flex items-center gap-1.5 mb-3 md:mb-5">
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map(star => {
+                    const val = Number(product.rating || 0);
+                    const filled = star <= Math.floor(val);
+                    const half = !filled && star === Math.ceil(val) && val % 1 >= 0.5;
+                    return (
+                      <svg key={star} className={`w-3 h-3 md:w-3.5 md:h-3.5 fill-current ${filled ? 'text-yellow-400' : half ? 'text-yellow-300' : 'text-gray-200'}`} viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    );
+                  })}
                 </div>
-              )}
+                <span className="text-[10px] md:text-xs font-bold text-gray-700">
+                  {Number(product.rating || 0).toFixed(1)}
+                </span>
+                <span className="text-[9px] md:text-[10px] text-gray-400">
+                  ({Number(product.ratingCount || 0).toLocaleString()})
+                </span>
+              </div>
               <p className="text-[11px] md:text-sm text-gray-500 mb-3 md:mb-6 line-clamp-2 hidden md:-webkit-box flex-grow">{product.description}</p>
               <button
                 onClick={(e) => { 
