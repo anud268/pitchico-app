@@ -5,15 +5,15 @@ import Product from '@/models/Product';
 export async function GET() {
   try {
     await dbConnect();
-    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
+    const products = await Product.find({}).sort({ _id: -1 }).lean();
     
     // Map _id to id so the frontend works smoothly without changes
     const mappedProducts = products.map(product => {
-      return {
-        ...product,
-        // Ensure _id exists before calling toString
-        id: product._id ? product._id.toString() : null,
+      const p = { ...product };
+      if (p._id) {
+        p.id = p._id.toString();
       }
+      return p;
     });
 
     return NextResponse.json(mappedProducts);
@@ -30,6 +30,9 @@ export async function POST(request) {
     const formData = await request.formData();
     
     // Parse normal fields
+    const rawRating = formData.get('rating');
+    const rawRatingCount = formData.get('ratingCount');
+    
     const newProductData = {
       name: formData.get('name'),
       price: Number(formData.get('price')),
@@ -38,9 +41,16 @@ export async function POST(request) {
       category: formData.get('category'),
       longDescription: formData.get('longDescription'),
       showOnFrontPage: formData.get('showOnFrontPage') === 'true',
-      rating: Number(formData.get('rating')) || 0,
-      ratingCount: Number(formData.get('ratingCount')) || 0,
+      rating: rawRating !== null && rawRating !== '' ? Number(rawRating) : 4.5,
+      ratingCount: rawRatingCount !== null && rawRatingCount !== '' ? Number(rawRatingCount) : 100,
     };
+
+    console.log('--- NEW PRODUCT SUBMISSION ---');
+    console.log('Data:', {
+      name: newProductData.name,
+      rating: newProductData.rating,
+      ratingCount: newProductData.ratingCount
+    });
 
     // Features and advantages sent as JSON array strings
     try {
