@@ -34,17 +34,23 @@ export default function ProductPage() {
           fetch(`/api/products`)
         ]);
 
+        let currentProduct = null;
+
         if (productRes.ok) {
-          const productData = await productRes.json();
-          setProduct(productData);
-          setMainImage(productData.images?.[0] || "");
+          currentProduct = await productRes.json();
+          setProduct(currentProduct);
+          setMainImage(currentProduct.images?.[0] || "");
         } else {
           setProduct(null);
         }
 
         if (allRes.ok) {
           const allData = await allRes.json();
-          setRelatedProducts(allData.filter(p => p.showOnFrontPage && p.id !== id));
+          // Only show products from the same category, excluding current product
+          const sameCategory = allData.filter(
+            p => p.category === currentProduct?.category && p.id !== id
+          );
+          setRelatedProducts(sameCategory);
         }
       } catch (error) {
         console.error("Error fetching product data:", error);
@@ -114,7 +120,26 @@ export default function ProductPage() {
             <div className="inline-block self-start px-3 py-1 md:px-4 md:py-1.5 bg-gold/10 text-gold border border-gold rounded-full text-[10px] md:text-xs font-semibold tracking-wider uppercase mb-3 md:mb-6">
               {product.category || 'Premium Utility'}
             </div>
-            <h1 className="text-3xl md:text-5xl font-display font-bold text-dark mb-2 md:mb-4 leading-tight">{product.name}</h1>
+            <h1 className="text-3xl md:text-5xl font-display font-bold text-dark mb-2 md:mb-3 leading-tight">{product.name}</h1>
+            {product.rating > 0 && (
+              <div className="flex items-center gap-2 mb-3 md:mb-5">
+                <div className="flex items-center gap-0.5">
+                  {[1,2,3,4,5].map(star => {
+                    const filled = star <= Math.floor(product.rating);
+                    const half = !filled && star === Math.ceil(product.rating) && product.rating % 1 >= 0.5;
+                    return (
+                      <svg key={star} className={`w-4 h-4 md:w-5 md:h-5 fill-current ${filled ? 'text-yellow-400' : half ? 'text-yellow-300' : 'text-gray-200'}`} viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    );
+                  })}
+                </div>
+                <span className="text-sm md:text-base font-bold text-gray-700">{product.rating.toFixed(1)}</span>
+                {product.ratingCount > 0 && (
+                  <span className="text-xs md:text-sm text-gray-400">({product.ratingCount.toLocaleString()} ratings)</span>
+                )}
+              </div>
+            )}
             <div className="text-2xl md:text-3xl font-medium text-[#25D366] md:text-gold mb-6 md:mb-8 flex items-center gap-3">
               {product.hasOffer && (
                 <span className="text-gray-400 line-through text-lg md:text-2xl">{formatCurrency(product.originalPrice)}</span>
@@ -187,7 +212,12 @@ export default function ProductPage() {
       {relatedProducts.length > 0 && (
         <div className="mt-20">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-display font-bold text-dark">Featured Innovations</h2>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-display font-bold text-dark">You May Also Like</h2>
+              {product.category && (
+                <p className="text-xs md:text-sm text-gray-400 mt-1 tracking-widest uppercase">More from <span className="text-gold font-semibold">{product.category}</span></p>
+              )}
+            </div>
             <div className="flex gap-2">
               <button onClick={() => scroll('left')} className="p-2 md:p-3 rounded-full bg-white border border-gray-200 text-dark hover:bg-gold hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
