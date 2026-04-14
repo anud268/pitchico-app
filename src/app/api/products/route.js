@@ -5,7 +5,7 @@ import Product from '@/models/Product';
 export async function GET() {
   try {
     await dbConnect();
-    const products = await Product.find({}).lean();
+    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
     
     // Map _id to id so the frontend works smoothly without changes
     const mappedProducts = products.map(product => {

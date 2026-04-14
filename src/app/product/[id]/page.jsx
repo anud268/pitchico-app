@@ -248,12 +248,32 @@ export default function ProductPage() {
                 </div>
                 <div className="p-4 flex flex-col flex-grow text-center items-center">
                   <h3 className="text-sm md:text-lg font-display font-bold text-dark mb-1 line-clamp-2 min-h-[40px] md:min-h-[50px]">{p.name}</h3>
-                  <div className="text-xs md:text-sm font-medium text-gold mb-3 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
+                  <div className="text-xs md:text-sm font-medium text-gold mb-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
                     {p.hasOffer && (
                       <span className="text-gray-400 line-through text-[10px] md:text-xs">{formatCurrency(p.originalPrice)}</span>
                     )}
                     <span>{formatCurrency(p.price)}</span>
                   </div>
+                  {/* Star Rating */}
+                  {p.rating > 0 && (
+                    <div className="flex items-center justify-center gap-1 mb-3">
+                      <div className="flex items-center gap-0.5">
+                        {[1,2,3,4,5].map(star => {
+                          const filled = star <= Math.floor(p.rating);
+                          const half = !filled && star === Math.ceil(p.rating) && p.rating % 1 >= 0.5;
+                          return (
+                            <svg key={star} className={`w-2.5 h-2.5 md:w-3 md:h-3 fill-current ${filled ? 'text-yellow-400' : half ? 'text-yellow-300' : 'text-gray-200'}`} viewBox="0 0 24 24">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                          );
+                        })}
+                      </div>
+                      <span className="text-[9px] md:text-[10px] font-bold text-gray-600">{Number(p.rating).toFixed(1)}</span>
+                      {p.ratingCount > 0 && (
+                        <span className="text-[8px] md:text-[9px] text-gray-400">({Number(p.ratingCount).toLocaleString()})</span>
+                      )}
+                    </div>
+                  )}
                   <button className="w-full mt-auto py-2 bg-dark text-white text-[10px] md:text-xs font-medium tracking-widest uppercase rounded hover:bg-gold transition-colors duration-300">
                     View
                   </button>
