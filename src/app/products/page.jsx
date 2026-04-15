@@ -1,16 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatCurrency } from '@/utils/formatters';
 import { useCart } from '@/context/CartContext';
 
-export default function AllProductsPage() {
+function ProductsContent() {
   const router = useRouter();
   const { addToCart } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const searchParams = useSearchParams();
+  const catParam = searchParams.get('category');
+  const [selectedCategory, setSelectedCategory] = useState(catParam || 'All');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (catParam) setSelectedCategory(catParam);
+  }, [catParam]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -40,12 +46,6 @@ export default function AllProductsPage() {
 
   return (
     <div className="pt-25 pb-24 px-6 max-w-7xl mx-auto min-h-screen">
-      {/* <div className="text-center mb-16">
-        <h1 className="text-4xl md:text-5xl font-display font-bold text-dark mb-4">All Innovations</h1>
-        <div className="w-16 h-1 bg-gold mx-auto my-8"></div>
-        <p className="text-xl text-gray-500 font-light">Explore our complete collection of smart gadgets.</p>
-      </div> */}
-
       <div className="flex overflow-x-auto gap-2 md:gap-3 mb-6 md:mb-10 pb-2 -mx-6 px-6 md:mx-0 md:px-0 md:flex-wrap md:justify-center snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {categories.map(category => (
           <button
@@ -122,5 +122,13 @@ export default function AllProductsPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function AllProductsPage() {
+  return (
+    <Suspense fallback={<div className="pt-25 pb-24 px-6 max-w-7xl mx-auto min-h-screen flex items-center justify-center">Loading collections...</div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

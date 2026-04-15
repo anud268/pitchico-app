@@ -41,6 +41,7 @@ export async function POST(request) {
       category: formData.get('category'),
       longDescription: formData.get('longDescription'),
       showOnFrontPage: formData.get('showOnFrontPage') === 'true',
+      showCategoryOnHomePage: formData.get('showOnFrontPage') === 'true', // Auto-derived
       rating: rawRating !== null && rawRating !== '' ? Number(rawRating) : 4.5,
       ratingCount: rawRatingCount !== null && rawRatingCount !== '' ? Number(rawRatingCount) : 100,
     };
