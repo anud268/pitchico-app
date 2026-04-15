@@ -1,16 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatCurrency } from '@/utils/formatters';
 import { useCart } from '@/context/CartContext';
 
 export default function AllProductsPage() {
   const router = useRouter();
   const { addToCart } = useCart();
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const searchParams = useSearchParams();
+  const catParam = searchParams.get('category');
+  const [selectedCategory, setSelectedCategory] = useState(catParam || 'All');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (catParam) setSelectedCategory(catParam);
+  }, [catParam]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

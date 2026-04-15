@@ -24,6 +24,10 @@ const productSchema = new mongoose.Schema(
       default: 0,
       required: false
     },
+    showCategoryOnHomePage: {
+      type: Boolean,
+      default: false
+    },
   },
   { timestamps: true }
 );
